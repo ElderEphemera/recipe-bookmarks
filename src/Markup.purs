@@ -79,10 +79,10 @@ blank = pure unit
 
 infixl 1 withModifier as !
 withModifier
-  :: forall a y
-  .  (MarkupM a -> MarkupM a)
+  :: forall a b y
+  .  (MarkupM a -> MarkupM b)
   -> (Node -> Effect y)
-  -> MarkupM a -> MarkupM a
+  -> MarkupM a -> MarkupM b
 withModifier f g c =
   onElements (f c) \elements -> elements <$ traverse_ g elements
 
