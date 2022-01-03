@@ -5,6 +5,25 @@
   margin: 0 auto;
 }
 
+form {
+  max-width: 40em;
+  margin: 0 auto;
+}
+
+form h1 {
+  text-align: center;
+}
+
+form input[type="text"] {
+  margin-top: 18px;
+  margin-right: 4px;
+  width: calc(100% - 58px);
+}
+
+form input[type="submit"] {
+  width: 46px;
+}
+
 h1, h2, h3 {
   margin-top: 10px;
   margin-bottom: 0;

@@ -13,6 +13,7 @@ import Data.Foldable (null, traverse_)
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (drop)
 import Data.Traversable (for_, traverse)
+import Data.Tuple (Tuple(..))
 
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
@@ -26,22 +27,30 @@ import Web.DOM.ParentNode (QuerySelector(..), querySelectorAll)
 import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (addEventListener, eventListener)
 import Web.HTML (window)
-import Web.HTML.Location (hash, reload)
+import Web.HTML.HTMLInputElement (fromNode, value)
+import Web.HTML.Location (hash, reload, setHash)
 import Web.HTML.Window (location, toEventTarget)
 
 import Duration (Duration, showDuration)
-import Markup (Markup, attachId_, el, text, (!), (@=))
+import Markup (Markup, attachId_, bare, blank, el, el', text, (!), (@=), (#=))
 import Recipe (Instruction(..), Recipe(..), extractRecipe)
 
 
 main :: Effect Unit
-main = launchAff_ $ runExceptT do
-  liftEffect $ reloadOnHashChange
-  resp <- fetchPage =<< liftEffect getHash
-  nodes <- liftEffect $ scrape resp.body
-  result <- liftEffect $ extractRecipe <$> traverse textContent nodes
-  traverse_ (log <<< printJsonDecodeError) result.left
-  attachId_ "contents" $ for_ result.right recipe
+main = addListenerToWindow "load" app
+
+app :: Effect Unit
+app = launchAff_ $ runExceptT do
+  liftEffect $ addListenerToWindow "hashchange" $ reload =<< location =<< window
+  url <- liftEffect getHash
+  if url == "" then
+    attachId_ "contents" $ landing
+  else do
+    resp <- fetchPage url
+    nodes <- liftEffect $ scrape resp.body
+    result <- liftEffect $ extractRecipe <$> traverse textContent nodes
+    traverse_ (log <<< printJsonDecodeError) result.left
+    attachId_ "contents" $ for_ result.right recipe
 
 reloadOnHashChange :: Effect Unit
 reloadOnHashChange = do
@@ -60,6 +69,16 @@ scrape :: Document -> Effect (Array Node)
 scrape doc = toArray =<< querySelectorAll query (toParentNode doc)
   where query = QuerySelector "script[type='application/ld+json']"
 
+
+landing :: Markup
+landing = el "form" do
+  el "h1" $ text "Recipe Bookmarks"
+  Tuple _ node <- el' "input" ! "type" @= "text" $ blank
+  for_ (fromNode node) \input ->
+    bare $ el "input" ! "type" @= "submit" ! "value" @= "view"
+      ! "click" #= \_event -> do
+        url <- value input
+        setHash url =<< location =<< window
 
 recipe :: Recipe -> Markup
 recipe (Recipe r) = do
@@ -91,3 +110,10 @@ instruction (InstructionStep { name: Just name, text: t }) = do
 instruction (InstructionSection { name, itemListElement: steps }) = do
   el "h4" ! "class" @= "instruction-section-name" $ text name
   el "ol" $ for_ steps instruction
+
+
+addListenerToWindow :: forall y. String -> Effect y -> Effect Unit
+addListenerToWindow ev e = do
+  win <- window
+  listener <- eventListener $ const e
+  addEventListener (EventType ev) listener false (toEventTarget win)
