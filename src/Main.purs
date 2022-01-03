@@ -23,9 +23,11 @@ import Web.DOM.Document (Document, toParentNode)
 import Web.DOM.Node (Node, textContent)
 import Web.DOM.NodeList (toArray)
 import Web.DOM.ParentNode (QuerySelector(..), querySelectorAll)
+import Web.Event.Event (EventType(..))
+import Web.Event.EventTarget (addEventListener, eventListener)
 import Web.HTML (window)
-import Web.HTML.Location (hash)
-import Web.HTML.Window (location)
+import Web.HTML.Location (hash, reload)
+import Web.HTML.Window (location, toEventTarget)
 
 import Duration (Duration, showDuration)
 import Markup (Markup, attachId, el, text, (!), (@=))
@@ -34,12 +36,19 @@ import Recipe (Instruction(..), Recipe(..), extractRecipe)
 
 main :: Effect Unit
 main = launchAff_ $ runExceptT do
+  liftEffect $ reloadOnHashChange
   resp <- fetchPage =<< liftEffect getHash
   nodes <- liftEffect $ scrape resp.body
   result <- liftEffect $ extractRecipe <$> traverse textContent nodes
   traverse_ (log <<< printJsonDecodeError) result.left
   _ <- attachId "contents" $ for_ result.right recipe
   pure unit
+
+reloadOnHashChange :: Effect Unit
+reloadOnHashChange = do
+  win <- window
+  listener <- eventListener $ \_ -> reload =<< location win
+  addEventListener (EventType "hashchange") listener false (toEventTarget win)
 
 getHash :: Effect String
 getHash = map (drop 1) <<< hash =<< location =<< window
