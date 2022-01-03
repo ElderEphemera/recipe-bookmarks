@@ -1,0 +1,32 @@
+#contents {
+  color: #111;
+  max-width: 60em;
+  padding: 8px;
+  margin: 0 auto;
+}
+
+h1, h2, h3 {
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+
+ul, ol {
+  margin-top: 8px;
+  padding-left: 34px;
+}
+
+#times dt {
+  display: inline-block;
+}
+
+#times dd {
+  display: inline-block;
+  margin-left: 5px;
+  margin-right: 8px;
+  padding-right: 8px;
+  border-right: 2px solid #888
+}
+
+#times dd:last-child  {
+  border: none;
+}
