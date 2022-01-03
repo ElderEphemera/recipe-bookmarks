@@ -30,7 +30,7 @@ import Web.HTML.Location (hash, reload)
 import Web.HTML.Window (location, toEventTarget)
 
 import Duration (Duration, showDuration)
-import Markup (Markup, attachId, el, text, (!), (@=))
+import Markup (Markup, attachId_, el, text, (!), (@=))
 import Recipe (Instruction(..), Recipe(..), extractRecipe)
 
 
@@ -41,8 +41,7 @@ main = launchAff_ $ runExceptT do
   nodes <- liftEffect $ scrape resp.body
   result <- liftEffect $ extractRecipe <$> traverse textContent nodes
   traverse_ (log <<< printJsonDecodeError) result.left
-  _ <- attachId "contents" $ for_ result.right recipe
-  pure unit
+  attachId_ "contents" $ for_ result.right recipe
 
 reloadOnHashChange :: Effect Unit
 reloadOnHashChange = do

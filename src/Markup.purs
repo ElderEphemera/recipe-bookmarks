@@ -112,3 +112,6 @@ attachId id c = do
   doc <- liftEffect $ document =<< window
   melement <- liftEffect $ getElementById id (toNonElementParentNode doc)
   for melement \element -> attach (Elem.toNode element) c
+
+attachId_ :: forall m a. MonadEffect m => String -> MarkupM a -> m Unit
+attachId_ id c = unit <$ attachId id c
