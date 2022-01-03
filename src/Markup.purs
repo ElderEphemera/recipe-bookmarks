@@ -76,6 +76,9 @@ text str = MarkupM $ ReaderT \doc -> WriterT $
 blank :: Markup
 blank = pure unit
 
+bare :: forall a. (MarkupM Unit -> MarkupM a) -> MarkupM a
+bare = (_$ blank)
+
 
 infixl 1 withModifier as !
 withModifier
