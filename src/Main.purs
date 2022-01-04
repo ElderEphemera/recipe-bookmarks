@@ -3,7 +3,7 @@ module Main where
 import Prelude
 
 import Affjax (Response, get, printError)
-import Affjax.ResponseFormat (document)
+import Affjax.ResponseFormat as RF
 
 import Control.Monad.Except.Trans (ExceptT(..), runExceptT)
 
@@ -27,9 +27,10 @@ import Web.DOM.ParentNode (QuerySelector(..), querySelectorAll)
 import Web.Event.Event (EventType(..))
 import Web.Event.EventTarget (addEventListener, eventListener)
 import Web.HTML (window)
+import Web.HTML.HTMLDocument (setTitle)
 import Web.HTML.HTMLInputElement (fromNode, value)
 import Web.HTML.Location (hash, reload, setHash)
-import Web.HTML.Window (location, toEventTarget)
+import Web.HTML.Window (document, location, toEventTarget)
 
 import Duration (Duration, showDuration)
 import Markup (Markup, attachId_, bare, blank, el, el', text, (!), (@=), (#=))
@@ -50,6 +51,7 @@ app = launchAff_ $ runExceptT do
     nodes <- liftEffect $ scrape resp.body
     result <- liftEffect $ extractRecipe <$> traverse textContent nodes
     traverse_ (log <<< printJsonDecodeError) result.left
+    liftEffect $ for_ result.right setTitleFor
     attachId_ "contents" $ for_ result.right recipe
 
 reloadOnHashChange :: Effect Unit
@@ -62,12 +64,15 @@ getHash :: Effect String
 getHash = map (drop 1) <<< hash =<< location =<< window
 
 fetchPage :: String -> ExceptT String Aff (Response Document)
-fetchPage url = ExceptT $ lmap printError <$> get document (proxy <> url)
+fetchPage url = ExceptT $ lmap printError <$> get RF.document (proxy <> url)
   where proxy = "https://proxy.elderephemera.workers.dev?url="
 
 scrape :: Document -> Effect (Array Node)
 scrape doc = toArray =<< querySelectorAll query (toParentNode doc)
   where query = QuerySelector "script[type='application/ld+json']"
+
+setTitleFor :: Recipe -> Effect Unit
+setTitleFor (Recipe r) = setTitle ("🔖 " <> r.name) =<< document =<< window
 
 
 landing :: Markup
