@@ -93,7 +93,8 @@ recipe (Recipe r) = do
     time "Cook" r.cookTime
     time "Prep" r.prepTime
     time "Total" r.totalTime
-  for_ r.yield $ (el "span" ! "class" @= "yield") <<< text
+  unless (null r.yield) $ el "div" ! "id" @= "yield" $ do
+    for_ r.yield $ el "div" <<< text
   for_ r.description $ (el "div" ! "id" @= "description") <<< text
   unless (null r.ingredients) $ el "div" ! "id" @= "ingredients" $ do
     el "h2" $ text "Ingredients"
