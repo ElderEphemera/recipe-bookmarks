@@ -7,7 +7,8 @@ import Affjax.ResponseFormat as RF
 
 import Control.Monad.Except.Trans (ExceptT(..), runExceptT)
 
-import Data.Argonaut (printJsonDecodeError)
+import Data.Argonaut (JsonDecodeError, printJsonDecodeError)
+import Data.Array (head)
 import Data.Bifunctor (lmap)
 import Data.Foldable (null, traverse_)
 import Data.Maybe (Maybe(..))
@@ -51,8 +52,9 @@ app = launchAff_ $ runExceptT do
     nodes <- liftEffect $ scrape resp.body
     result <- liftEffect $ extractRecipe <$> traverse textContent nodes
     traverse_ (log <<< printJsonDecodeError) result.left
-    liftEffect $ for_ result.right setTitleFor
-    attachId_ "contents" $ for_ result.right recipe
+    attachId_ "contents" $ case head $ result.right of
+      Nothing -> error result.left
+      Just r -> recipe r
 
 reloadOnHashChange :: Effect Unit
 reloadOnHashChange = do
@@ -84,6 +86,16 @@ landing = el "form" do
       ! "click" #= \_event -> do
         url <- value input
         setHash url =<< location =<< window
+
+error :: Array JsonDecodeError -> Markup
+error errs = el "div" ! "id" @= "error" $ do
+  liftEffect $ traverse_ (log <<< printJsonDecodeError) errs
+  el "div" $ text $ if null errs
+    then "No recipe data found on the provided page"
+    else "Could not parse recipe data from the provided page"
+  el "button"
+    ! "click" #= (\_event -> setHash "" =<< location =<< window)
+    $ text "Go Back"
 
 recipe :: Recipe -> Markup
 recipe (Recipe r) = do

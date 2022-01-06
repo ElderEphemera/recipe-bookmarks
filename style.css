@@ -24,6 +24,14 @@ form input[type="submit"] {
   width: 46px;
 }
 
+#error {
+  text-align: center;
+}
+
+#error div {
+  margin-bottom: 10px;
+}
+
 h1, h2, h3 {
   margin-top: 10px;
   margin-bottom: 0;
