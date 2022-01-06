@@ -28,7 +28,7 @@ newtype Recipe = Recipe
   , description :: Maybe String
   , ingredients :: Array String
   , instructions :: Array Instruction
-  , yield :: Array String
+  , yield :: Array Yield
   }
 
 instance decodeRecipe :: DecodeJson Recipe where
@@ -88,6 +88,20 @@ instance decodeInstruction :: DecodeJson Instruction where
           name            <- obj .: "name"
           itemListElement <- obj .:* "itemListElement"
           pure $ InstructionSection { name, itemListElement }
+
+
+data Yield
+  = StringYield String
+  | IntYield Int
+
+instance decodeYield :: DecodeJson Yield where
+  decodeJson json
+    =   StringYield <$> decodeJson json
+    <|> IntYield <$> decodeJson json
+
+displayYield :: Yield -> String
+displayYield (StringYield str) = str
+displayYield (IntYield servings) = show servings <> " servings"
 
 
 infix 7 pluralField as .:*

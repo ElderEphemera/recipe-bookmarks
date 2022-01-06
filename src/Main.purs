@@ -35,7 +35,7 @@ import Web.HTML.Window (document, location, toEventTarget)
 
 import Duration (Duration, showDuration)
 import Markup (Markup, attachId_, bare, blank, el, el', text, (!), (@=), (#=))
-import Recipe (Instruction(..), Recipe(..), extractRecipe)
+import Recipe (Instruction(..), Recipe(..), displayYield, extractRecipe)
 
 
 main :: Effect Unit
@@ -106,7 +106,7 @@ recipe (Recipe r) = do
     time "Prep" r.prepTime
     time "Total" r.totalTime
   unless (null r.yield) $ el "div" ! "id" @= "yield" $ do
-    for_ r.yield $ el "div" <<< text
+    for_ r.yield $ el "div" <<< text <<< displayYield
   for_ r.description $ (el "div" ! "id" @= "description") <<< text
   unless (null r.ingredients) $ el "div" ! "id" @= "ingredients" $ do
     el "h2" $ text "Ingredients"
