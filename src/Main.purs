@@ -123,7 +123,7 @@ time label value = for_ value $ \t -> do
 instruction :: Instruction -> Markup
 instruction (InstructionStep { name: Nothing, text: t }) = htmlText t
 instruction (InstructionStep { name: Just name, text: t }) = do
-  el "span" ! "class" @= "instruction-step-name" $ htmlText name
+  el "h4" ! "class" @= "instruction-step-name" $ htmlText name
   el "span" $ htmlText t
 instruction (InstructionSection { name, itemListElement: steps }) = do
   el "h4" ! "class" @= "instruction-section-name" $ htmlText name
