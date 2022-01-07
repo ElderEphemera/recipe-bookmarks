@@ -34,7 +34,8 @@ import Web.HTML.Location (hash, reload, setHash)
 import Web.HTML.Window (document, location, toEventTarget)
 
 import Duration (Duration, showDuration)
-import Markup (Markup, attachId_, bare, blank, el, el', text, (!), (@=), (#=))
+import Markup
+  (Markup, attachId_, bare, blank, el, el', htmlText, text, (!), (@=), (#=))
 import Recipe (Instruction(..), Recipe(..), displayYield, extractRecipe)
 
 
@@ -98,18 +99,18 @@ error errs = el "div" ! "id" @= "error" $ do
 
 recipe :: Recipe -> Markup
 recipe (Recipe r) = do
-  el "h1" $ text r.name
-  for_ r.author $ (el "h3" ! "class" @= "author") <<< text
+  el "h1" $ htmlText r.name
+  for_ r.author $ (el "h3" ! "class" @= "author") <<< htmlText
   el "dl" ! "id" @= "times" $ do
     time "Cook" r.cookTime
     time "Prep" r.prepTime
     time "Total" r.totalTime
   unless (null r.yield) $ el "div" ! "id" @= "yield" $ do
-    for_ r.yield $ el "div" <<< text <<< displayYield
-  for_ r.description $ (el "div" ! "id" @= "description") <<< text
+    for_ r.yield $ el "div" <<< htmlText <<< displayYield
+  for_ r.description $ (el "div" ! "id" @= "description") <<< htmlText
   unless (null r.ingredients) $ el "div" ! "id" @= "ingredients" $ do
     el "h2" $ text "Ingredients"
-    el "ul" $ for_ r.ingredients $ el "li" <<< text
+    el "ul" $ for_ r.ingredients $ el "li" <<< htmlText
   unless (null r.instructions) $ el "div" ! "id" @= "instructions" $ do
     el "h2" $ text "Instructions"
     el "ol" $ for_ r.instructions $ el "li" <<< instruction
@@ -120,12 +121,12 @@ time label value = for_ value $ \t -> do
   el "dd" $ text $ showDuration t
 
 instruction :: Instruction -> Markup
-instruction (InstructionStep { name: Nothing, text: t }) = text t
+instruction (InstructionStep { name: Nothing, text: t }) = htmlText t
 instruction (InstructionStep { name: Just name, text: t }) = do
-  el "span" ! "class" @= "instruction-step-name" $ text name
-  el "span" $ text t
+  el "span" ! "class" @= "instruction-step-name" $ htmlText name
+  el "span" $ htmlText t
 instruction (InstructionSection { name, itemListElement: steps }) = do
-  el "h4" ! "class" @= "instruction-section-name" $ text name
+  el "h4" ! "class" @= "instruction-section-name" $ htmlText name
   el "ol" $ for_ steps instruction
 
 

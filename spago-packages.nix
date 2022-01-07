@@ -785,6 +785,18 @@ let
         installPhase = "ln -s $src $out";
       };
 
+    "web-dom-parser" = pkgs.stdenv.mkDerivation {
+        name = "web-dom-parser";
+        version = "v7.0.0";
+        src = pkgs.fetchgit {
+          url = "https://github.com/purescript-web/purescript-web-dom-parser.git";
+          rev = "f247c30c996f82a6de1e660ac0ad29638e700a08";
+          sha256 = "0xda6vybzv8gj7aqlsc6gp6c39kahbg1qn1y8bh70f4v30cnnpgb";
+        };
+        phases = "installPhase";
+        installPhase = "ln -s $src $out";
+      };
+
     "web-events" = pkgs.stdenv.mkDerivation {
         name = "web-events";
         version = "v3.0.0";

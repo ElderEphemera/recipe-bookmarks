@@ -5,9 +5,10 @@ import Prelude
 import Control.Monad.Reader (ReaderT(..), runReaderT)
 import Control.Monad.Writer (WriterT(..), runWriterT)
 
+import Data.Either (hush)
 import Data.Foldable (traverse_)
-import Data.Maybe (Maybe(..))
-import Data.Traversable (for)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Traversable (for, traverse)
 import Data.Tuple (Tuple(..), fst)
 
 import Effect (Effect)
@@ -17,9 +18,10 @@ import Effect.Exception (throw)
 import Web.Event.Event (Event, EventType(..))
 import Web.Event.EventTarget (addEventListener, eventListener)
 import Web.DOM (Document, Node)
-import Web.DOM.Document (createElement, createTextNode)
+import Web.DOM.Document (createElement, createTextNode, documentElement)
+import Web.DOM.DOMParser (parseHTMLFromString, makeDOMParser)
 import Web.DOM.Element as Elem
-import Web.DOM.Node (appendChild, ownerDocument, toEventTarget)
+import Web.DOM.Node (appendChild, ownerDocument, textContent, toEventTarget)
 import Web.DOM.NonElementParentNode (getElementById)
 import Web.DOM.Text as Text
 import Web.HTML (window)
@@ -71,7 +73,13 @@ el' name c = do
 
 text :: String -> Markup
 text str = MarkupM $ ReaderT \doc -> WriterT $
-  Tuple unit <$> pure <$> Text.toNode <$> createTextNode str doc
+  Tuple unit <<< pure <<< Text.toNode <$> createTextNode str doc
+
+htmlText :: String -> Markup
+htmlText str = text =<< liftEffect do
+  edoc <- parseHTMLFromString str =<< makeDOMParser
+  let getText = traverse (textContent <<< Elem.toNode) <=< documentElement
+  fromMaybe str <<< join <$> traverse getText (hush edoc)
 
 blank :: Markup
 blank = pure unit

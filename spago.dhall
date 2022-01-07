@@ -21,6 +21,7 @@
   , "transformers"
   , "tuples"
   , "web-dom"
+  , "web-dom-parser"
   , "web-events"
   , "web-html"
   ]
