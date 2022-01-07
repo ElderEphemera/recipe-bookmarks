@@ -10,6 +10,7 @@ import Control.Monad.Except.Trans (ExceptT(..), runExceptT)
 import Data.Argonaut (JsonDecodeError, printJsonDecodeError)
 import Data.Array (head)
 import Data.Bifunctor (lmap)
+import Data.Either (either)
 import Data.Foldable (null, traverse_)
 import Data.Maybe (Maybe(..))
 import Data.String.CodeUnits (drop)
@@ -43,7 +44,7 @@ main :: Effect Unit
 main = addListenerToWindow "load" app
 
 app :: Effect Unit
-app = launchAff_ $ runExceptT do
+app = launchAff_ $ (either log pure =<<_) $ runExceptT do
   liftEffect $ addListenerToWindow "hashchange" $ reload =<< location =<< window
   url <- liftEffect getHash
   if url == "" then
