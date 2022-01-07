@@ -51,7 +51,6 @@ app = launchAff_ $ runExceptT do
     resp <- fetchPage url
     nodes <- liftEffect $ scrape resp.body
     result <- liftEffect $ extractRecipe <$> traverse textContent nodes
-    traverse_ (log <<< printJsonDecodeError) result.left
     attachId_ "contents" $ case head $ result.right of
       Nothing -> error result.left
       Just r -> recipe r
