@@ -13,7 +13,7 @@ import Data.Bifunctor (lmap)
 import Data.Either (either)
 import Data.Foldable (null, traverse_)
 import Data.Maybe (Maybe(..))
-import Data.String.CodeUnits (drop)
+import Data.String (drop, take)
 import Data.Traversable (for_, traverse)
 import Data.Tuple (Tuple(..))
 
@@ -68,7 +68,8 @@ getHash = map (drop 1) <<< hash =<< location =<< window
 
 fetchPage :: String -> ExceptT String Aff (Response Document)
 fetchPage url = ExceptT $ lmap printError <$> get RF.document (proxy <> url)
-  where proxy = "https://proxy.elderephemera.workers.dev?url="
+  where proxy = if take 5 url == "data:" then ""
+    else "https://proxy.elderephemera.workers.dev?url="
 
 scrape :: Document -> Effect (Array Node)
 scrape doc = toArray =<< querySelectorAll query (toParentNode doc)
