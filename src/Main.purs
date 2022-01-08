@@ -3,7 +3,8 @@ module Main where
 import Prelude
 
 import Affjax (Response, get, printError)
-import Affjax.ResponseFormat as RF
+import Affjax.ResponseFormat (string)
+import Affjax.ResponseHeader (ResponseHeader(..))
 
 import Control.Monad.Except.Trans (ExceptT(..), runExceptT)
 
@@ -11,9 +12,9 @@ import Data.Argonaut (JsonDecodeError, printJsonDecodeError)
 import Data.Array (head)
 import Data.Bifunctor (lmap)
 import Data.Either (either)
-import Data.Foldable (null, traverse_)
+import Data.Foldable (any, null, traverse_)
 import Data.Maybe (Maybe(..))
-import Data.String (drop, take)
+import Data.String (drop, length, take, toLower)
 import Data.Traversable (for_, traverse)
 import Data.Tuple (Tuple(..))
 
@@ -22,8 +23,9 @@ import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 
-import Web.DOM.Document (Document, toParentNode)
-import Web.DOM.Node (Node, textContent)
+import Web.DOM.Document (toParentNode)
+import Web.DOM.DOMParser (parseHTMLFromString, makeDOMParser)
+import Web.DOM.Node (textContent)
 import Web.DOM.NodeList (toArray)
 import Web.DOM.ParentNode (QuerySelector(..), querySelectorAll)
 import Web.Event.Event (EventType(..))
@@ -51,8 +53,7 @@ app = launchAff_ $ (either log pure =<<_) $ runExceptT do
     attachId_ "contents" $ landing
   else do
     resp <- fetchPage url
-    nodes <- liftEffect $ scrape resp.body
-    result <- liftEffect $ extractRecipe <$> traverse textContent nodes
+    result <- extractRecipe <$> scrape resp
     attachId_ "contents" $ case head $ result.right of
       Nothing -> error result.left
       Just r -> recipe r
@@ -66,14 +67,23 @@ reloadOnHashChange = do
 getHash :: Effect String
 getHash = map (drop 1) <<< hash =<< location =<< window
 
-fetchPage :: String -> ExceptT String Aff (Response Document)
-fetchPage url = ExceptT $ lmap printError <$> get RF.document (proxy <> url)
+fetchPage :: String -> ExceptT String Aff (Response String)
+fetchPage url = ExceptT $ lmap printError <$> get string (proxy <> url)
   where proxy = if take 5 url == "data:" then ""
     else "https://proxy.elderephemera.workers.dev?url="
 
-scrape :: Document -> Effect (Array Node)
-scrape doc = toArray =<< querySelectorAll query (toParentNode doc)
+scrape :: Response String -> ExceptT String Aff (Array String)
+scrape { headers, body }
+  | hasContentType "application/ld+json" headers = pure [body]
+  | otherwise = do
+    doc <- ExceptT $ liftEffect $ parseHTMLFromString body =<< makeDOMParser
+    nodes <- liftEffect $ toArray =<< querySelectorAll query (toParentNode doc)
+    liftEffect $ traverse textContent nodes
   where query = QuerySelector "script[type='application/ld+json']"
+
+hasContentType :: String -> Array ResponseHeader -> Boolean
+hasContentType ctype = any \(ResponseHeader name val) ->
+  toLower name == "content-type" && take (length ctype) val == ctype
 
 setTitleFor :: Recipe -> Effect Unit
 setTitleFor (Recipe r) = setTitle ("🔖 " <> r.name) =<< document =<< window
