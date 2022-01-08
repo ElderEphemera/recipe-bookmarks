@@ -2,7 +2,10 @@ module Duration where
 
 import Prelude
 
-import Data.Argonaut (class DecodeJson, decodeJson, JsonDecodeError(..))
+import Data.Argonaut
+  ( class DecodeJson, class EncodeJson, JsonDecodeError(..)
+  , decodeJson, encodeJson
+  )
 import Data.Array (foldMap, intercalate)
 import Data.Array.NonEmpty (tail)
 import Data.Either (hush, note)
@@ -41,6 +44,20 @@ durationRegex
   where component tag = "(?:([\\d\\.]+)" <> tag <> ")?"
 
 foreign import parseFloat :: String -> Number
+
+
+instance encodeDuration :: EncodeJson Duration where
+  encodeJson (Duration d) = encodeJson
+    $  "P"
+    <> component "Y" d.years
+    <> component "M" d.months
+    <> component "W" d.weeks
+    <> component "D" d.days
+    <> "T"
+    <> component "H" d.hours
+    <> component "M" d.minutes
+    <> component "S" d.seconds
+    where component tag val = if val == 0.0 then "" else show val <> tag
 
 
 showDuration :: Duration -> String

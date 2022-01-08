@@ -5,14 +5,16 @@ import Prelude
 import Control.Alt ((<|>))
 
 import Data.Argonaut
-  ( class DecodeJson, Json, JsonDecodeError(..)
-  , decodeJson, parseJson, (.!=), (.:), (.:?)
+  ( class DecodeJson, class EncodeJson, Json, JsonDecodeError(..)
+  , decodeJson, encodeJson, jsonEmptyObject, parseJson
+  , (.!=), (.:), (.:?), (~>), (~>?), (:=?), (:=)
   )
 import Data.Either (Either(..))
 import Data.Filterable (partitionMap)
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
+import Data.Tuple (Tuple(..))
 
 import Foreign.Object (Object)
 
@@ -62,6 +64,20 @@ decodeRecipeObj obj = do
     , description, ingredients, instructions, yield
     }
 
+instance encodeRecipe :: EncodeJson Recipe where
+  encodeJson (Recipe r)
+    =   "@type" := "Recipe"
+    ~>  "name" := r.name
+    ~>  "author" :=* r.author
+    ~>* "cookTime" :=? r.cookTime
+    ~>? "prepTime" :=? r.prepTime
+    ~>? "totalTime" :=? r.totalTime
+    ~>? "description" :=? r.description
+    ~>? "recipeIngredient" :=* r.ingredients
+    ~>* "recipeInstructions" :=* r.instructions
+    ~>* "recipeYield" :=* r.yield
+    ~>* jsonEmptyObject
+
 
 data Instruction
   = InstructionStep
@@ -89,6 +105,17 @@ instance decodeInstruction :: DecodeJson Instruction where
           itemListElement <- obj .:* "itemListElement"
           pure $ InstructionSection { name, itemListElement }
 
+instance encodeInstruction :: EncodeJson Instruction where
+  encodeJson (InstructionStep { name: Nothing, text }) = encodeJson text
+  encodeJson (InstructionStep { name: Just name, text })
+    =  "name" := name
+    ~> "text" := text
+    ~> jsonEmptyObject
+  encodeJson (InstructionSection { name, itemListElement })
+    =   "name" := name
+    ~>  "itemListElement" :=* itemListElement
+    ~>* jsonEmptyObject
+
 
 data Yield
   = StringYield String
@@ -98,6 +125,10 @@ instance decodeYield :: DecodeJson Yield where
   decodeJson json
     =   StringYield <$> decodeJson json
     <|> IntYield <$> decodeJson json
+
+instance encodeYield :: EncodeJson Yield where
+  encodeJson (StringYield str) = encodeJson str
+  encodeJson (IntYield servings) = encodeJson servings
 
 displayYield :: Yield -> String
 displayYield (StringYield str) = str
@@ -118,3 +149,17 @@ fixedField
   => Either JsonDecodeError a -> a -> Either JsonDecodeError Unit
 fixedField field expected = field >>= \actual ->
   if actual == expected then Right unit else Left MissingValue
+
+infix 7 assocPlural as :=*
+assocPlural
+  :: forall a. EncodeJson a
+  => String -> Array a -> Tuple String (Array Json)
+assocPlural field = Tuple field <<< map encodeJson
+
+infixr 6 extendPlural as ~>*
+extendPlural
+  :: forall a. EncodeJson a
+  => Tuple String (Array Json) -> a -> Json
+extendPlural (Tuple field []) = encodeJson
+extendPlural (Tuple field [val]) = ((field := val) ~>_)
+extendPlural (Tuple field vals) = ((field := vals) ~>_)

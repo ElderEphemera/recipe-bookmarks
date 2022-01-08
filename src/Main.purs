@@ -8,7 +8,8 @@ import Affjax.ResponseHeader (ResponseHeader(..))
 
 import Control.Monad.Except.Trans (ExceptT(..), runExceptT)
 
-import Data.Argonaut (JsonDecodeError, printJsonDecodeError)
+import Data.Argonaut
+  (JsonDecodeError, encodeJson, printJsonDecodeError, stringify)
 import Data.Array (head)
 import Data.Bifunctor (lmap)
 import Data.Either (either)
@@ -33,7 +34,7 @@ import Web.Event.EventTarget (addEventListener, eventListener)
 import Web.HTML (window)
 import Web.HTML.HTMLDocument (setTitle)
 import Web.HTML.HTMLInputElement (fromNode, value)
-import Web.HTML.Location (hash, reload, setHash)
+import Web.HTML.Location (hash, reload, search, setHash, setSearch)
 import Web.HTML.Window (document, location, toEventTarget)
 
 import Duration (Duration, showDuration)
@@ -54,9 +55,13 @@ app = launchAff_ $ (either log pure =<<_) $ runExceptT do
   else do
     resp <- fetchPage url
     result <- extractRecipe <$> scrape resp
-    attachId_ "contents" $ case head $ result.right of
-      Nothing -> error result.left
-      Just r -> recipe r
+    case head $ result.right of
+      Nothing -> attachId_ "contents" $ error result.left
+      Just r -> do
+        param <- liftEffect getSearch
+        if (param == "preload")
+        then liftEffect $ preloaded r
+        else attachId_ "contents" $ recipe r
 
 reloadOnHashChange :: Effect Unit
 reloadOnHashChange = do
@@ -66,6 +71,9 @@ reloadOnHashChange = do
 
 getHash :: Effect String
 getHash = map (drop 1) <<< hash =<< location =<< window
+
+getSearch :: Effect String
+getSearch = map (drop 1) <<< search =<< location =<< window
 
 fetchPage :: String -> ExceptT String Aff (Response String)
 fetchPage url = ExceptT $ lmap printError <$> get string (proxy <> url)
@@ -87,6 +95,12 @@ hasContentType ctype = any \(ResponseHeader name val) ->
 
 setTitleFor :: Recipe -> Effect Unit
 setTitleFor (Recipe r) = setTitle ("🔖 " <> r.name) =<< document =<< window
+
+preloaded :: Recipe -> Effect Unit
+preloaded r = do
+  loc <- location =<< window
+  setSearch "" loc
+  setHash ("data:application/ld+json," <> stringify (encodeJson r)) loc
 
 
 landing :: Markup
