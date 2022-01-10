@@ -108,7 +108,7 @@ landing = el "form" do
   el "h1" $ text "Recipe Bookmarks"
   Tuple _ node <- el' "input" ! "type" @= "text" $ blank
   for_ (fromNode node) \input ->
-    bare $ el "input" ! "type" @= "submit" ! "value" @= "view"
+    bare $ el "input" ! "type" @= "submit" ! "value" @= "View"
       ! "click" #= \_event -> do
         url <- value input
         setHash url =<< location =<< window
