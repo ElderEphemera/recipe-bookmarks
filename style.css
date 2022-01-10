@@ -1,5 +1,22 @@
-#contents {
+body {
   color: #111;
+  background-color: #FFF;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    color: #EEE;
+    background-color: #111;
+  }
+
+  input[type='text'], input[type='submit'], button {
+    color: #EEE;
+    background-color: #333;
+    border: 2px solid #222;
+  }
+}
+
+#contents {
   max-width: 60em;
   padding: 8px;
   margin: 0 auto;
