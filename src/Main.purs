@@ -58,6 +58,7 @@ app = launchAff_ $ (either log pure =<<_) $ runExceptT do
     case head $ result.right of
       Nothing -> attachId_ "contents" $ error result.left
       Just r -> do
+        liftEffect $ setTitleFor r
         param <- liftEffect getSearch
         if (param == "preload")
         then liftEffect $ preloaded r
