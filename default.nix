@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ pkgs ? import nix/pinned-nixpkgs.nix }:
 let
   spagoPkgs = import ./spago-packages.nix { inherit pkgs; };
   depSources = pkgs.lib.strings.concatMapStringsSep " "

@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ pkgs ? import nix/pinned-nixpkgs.nix }:
 let
   spago2nix = import (builtins.fetchTarball {
     name = "spago2nix";
