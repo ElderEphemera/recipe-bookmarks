@@ -1,10 +1,10 @@
-body {
+body, a {
   color: #111;
   background-color: #FFF;
 }
 
 @media (prefers-color-scheme: dark) {
-  body {
+  body, a {
     color: #EEE;
     background-color: #111;
   }

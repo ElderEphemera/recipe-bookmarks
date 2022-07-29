@@ -24,6 +24,7 @@ import Duration (Duration)
 newtype Recipe = Recipe
   { name :: String
   , author :: Array String
+  , id :: Maybe String
   , cookTime :: Maybe Duration
   , prepTime :: Maybe Duration
   , totalTime :: Maybe Duration
@@ -52,6 +53,7 @@ decodeRecipeObj obj = do
   name         <- obj .: "name"
   author       <- obj .:* "author"
               <|> (obj .:* "author" >>= traverse (_.: "name"))
+  id           <- obj .:? "@id"
   cookTime     <- obj .:? "cookTime"
   prepTime     <- obj .:? "prepTime"
   totalTime    <- obj .:? "totalTime"
@@ -60,7 +62,7 @@ decodeRecipeObj obj = do
   instructions <- obj .:* "recipeInstructions"
   yield        <- obj .:* "recipeYield"
   pure $ Recipe
-    { name, author, cookTime, prepTime, totalTime
+    { name, author, id, cookTime, prepTime, totalTime
     , description, ingredients, instructions, yield
     }
 
@@ -69,7 +71,8 @@ instance encodeRecipe :: EncodeJson Recipe where
     =   "@type" := "Recipe"
     ~>  "name" := r.name
     ~>  "author" :=* r.author
-    ~>* "cookTime" :=? r.cookTime
+    ~>* "@id" :=? r.id
+    ~>? "cookTime" :=? r.cookTime
     ~>? "prepTime" :=? r.prepTime
     ~>? "totalTime" :=? r.totalTime
     ~>? "description" :=? r.description

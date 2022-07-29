@@ -128,6 +128,7 @@ recipe :: Recipe -> Markup
 recipe (Recipe r) = do
   el "h1" $ htmlText r.name
   for_ r.author $ (el "h3" ! "class" @= "author") <<< htmlText
+  for_ r.id \id -> el "a" ! "id" @= id ! "href" @= id $ text id
   el "dl" ! "id" @= "times" $ do
     time "Cook" r.cookTime
     time "Prep" r.prepTime
