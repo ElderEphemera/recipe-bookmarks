@@ -39,7 +39,7 @@ import Web.HTML.Window (document, location, toEventTarget)
 
 import Duration (Duration, showDuration)
 import Markup
-  (Markup, attachId_, bare, blank, el, el', htmlText, text, (!), (@=), (#=))
+  (Markup, attachId_, bare, el, el', htmlText, text, (!), (@=), (#=))
 import Recipe (Instruction(..), Recipe(..), displayYield, extractRecipe)
 
 
@@ -107,7 +107,8 @@ preloaded r = do
 landing :: Markup
 landing = el "form" do
   el "h1" $ text "Recipe Bookmarks"
-  Tuple _ node <- el' "input" ! "type" @= "text" $ blank
+  Tuple _ node <- bare $ el' "input" ! "type" @= "text"
+    ! "placeholder" @= "Paste recipe URL here"
   for_ (fromNode node) \input ->
     bare $ el "input" ! "type" @= "submit" ! "value" @= "View"
       ! "click" #= \_event -> do
