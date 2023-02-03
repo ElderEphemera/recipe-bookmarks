@@ -151,6 +151,10 @@ time label value = for_ value $ \t -> do
 
 instruction :: Instruction -> Markup
 instruction (InstructionStep { name: Nothing, text: t }) = htmlText t
+-- Some sites will make both the name and text the exact same instruction text
+-- so we check for that case and only display the text once.
+instruction (InstructionStep { name: Just name, text: t })
+  | name == t = htmlText t
 instruction (InstructionStep { name: Just name, text: t }) = do
   el "h4" ! "class" @= "instruction-step-name" $ htmlText name
   el "span" $ htmlText t
