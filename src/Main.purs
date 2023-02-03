@@ -160,7 +160,7 @@ instruction (InstructionStep { name: Just name, text: t }) = do
   el "span" $ htmlText t
 instruction (InstructionSection { name, itemListElement: steps }) = do
   el "h4" ! "class" @= "instruction-section-name" $ htmlText name
-  el "ol" $ for_ steps instruction
+  el "ol" $ for_ steps $ el "li" <<< instruction
 
 
 addListenerToWindow :: forall y. String -> Effect y -> Effect Unit
